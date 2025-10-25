@@ -1198,6 +1198,10 @@ bool IRrecv::decode(decode_results *results, irparams_t *save,
 #endif  // DECODE_CARRIER_AC84
   // Typically new protocols are added above this line.
   }
+#if DECODE_OHM
+	DPRINTLN("Attempting Ohm decode");
+	if (decodeOHM(results, offset)) return true;
+#endif  // DECODE_OHM
 #if DECODE_HASH
   // decodeHash returns a hash on any input.
   // Thus, it needs to be last in the list.
