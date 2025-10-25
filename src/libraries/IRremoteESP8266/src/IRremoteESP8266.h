@@ -1431,8 +1431,10 @@ const uint16_t kMilesMinRepeat = 0;
 const uint16_t kBoseBits = 16;
 const uint16_t kRhossStateLength = 12;
 const uint16_t kRhossBits = kRhossStateLength * 8;
-const uint16_t kRhossDefaultRepeat = 0;
+const uint16_t kRhossDefaultRepeat = 26;
 const uint16_t kClimaButlerBits = 52;
+const uint16_t kOhmBits = 24;
+const uint16_t kOhmMinRepeat = kSingleRepeat;
 
 
 // Legacy defines. (Deprecated)
