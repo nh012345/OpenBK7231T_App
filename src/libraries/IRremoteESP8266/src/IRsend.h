@@ -880,6 +880,10 @@ class IRsend {
   void sendWowwee(const uint64_t data, const uint16_t nbits = kWowweeBits,
                   const uint16_t repeat = kWowweeDefaultRepeat);
 #endif  // SEND_WOWWEE
+#if SEND_OHM
+  void sendInax(const uint64_t data, const uint16_t nbits = kOhmBits,
+                const uint16_t repeat = kOhmMinRepeat);
+#endif  // SEND_OHM
 
  protected:
 #ifdef UNIT_TEST
