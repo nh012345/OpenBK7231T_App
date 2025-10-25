@@ -1156,6 +1156,11 @@ bool IRsend::send(const decode_type_t type, const uint64_t data,
       sendZepeal(data, nbits, min_repeat);
       break;
 #endif  // SEND_ZEPEAL
+#if SEND_OHM
+    case OHM:
+      sendOhm(data, nbits, min_repeat);
+      break;
+#endif  // SEND_Ohm
     default:
       return false;
   }
@@ -1444,11 +1449,6 @@ bool IRsend::send(const decode_type_t type, const uint8_t *state,
       sendWhirlpoolAC(state, nbytes);
       break;
 #endif  // SEND_WHIRLPOOL_AC
-#if SEND_OHM
-    case OHM:
-      sendOhm(data, nbits, min_repeat);
-      break;
-#endif  // SEND_Ohm
     default:
       return false;
   }
