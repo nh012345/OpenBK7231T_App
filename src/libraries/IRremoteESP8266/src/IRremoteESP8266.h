@@ -946,6 +946,13 @@
 #define SEND_CARRIER_AC84   _IR_ENABLE_DEFAULT_
 #endif  // SEND_CARRIER_AC84
 
+#ifndef SEND_OHM
+#define SEND_OHM        _IR_ENABLE_DEFAULT_
+#endif  // SEND_OHM
+#ifndef DECODE_OHM
+#define DECODE_OHM _IR_ENABLE_DEFAULT_
+#endif  // DECODE_OHM
+
 #if (DECODE_ARGO || DECODE_DAIKIN || DECODE_FUJITSU_AC || DECODE_GREE || \
      DECODE_KELVINATOR || DECODE_MITSUBISHI_AC || DECODE_TOSHIBA_AC || \
      DECODE_TROTEC || DECODE_HAIER_AC || DECODE_HITACHI_AC || \
@@ -1326,6 +1333,7 @@ const uint16_t kNECBits = 32;
 const uint16_t kNeoclimaStateLength = 12;
 const uint16_t kNeoclimaBits = kNeoclimaStateLength * 8;
 const uint16_t kNeoclimaMinRepeat = kNoRepeat;
+const uint16_t kOhmBits
 const uint16_t kPanasonicBits = 48;
 const uint32_t kPanasonicManufacturer = 0x4004;
 const uint16_t kPanasonicAcStateLength = 27;
