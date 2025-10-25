@@ -1334,7 +1334,7 @@ const uint16_t kNECBits = 32;
 const uint16_t kNeoclimaStateLength = 12;
 const uint16_t kNeoclimaBits = kNeoclimaStateLength * 8;
 const uint16_t kNeoclimaMinRepeat = kNoRepeat;
-const uint16_t kOhmBits
+const uint16_t kOhmBits = 26;
 const uint16_t kPanasonicBits = 48;
 const uint32_t kPanasonicManufacturer = 0x4004;
 const uint16_t kPanasonicAcStateLength = 27;
