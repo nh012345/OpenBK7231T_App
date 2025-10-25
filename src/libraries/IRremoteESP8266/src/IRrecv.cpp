@@ -1200,7 +1200,7 @@ bool IRrecv::decode(decode_results *results, irparams_t *save,
   }
 #if DECODE_OHM
 	DPRINTLN("Attempting Ohm decode");
-	if (decodeOHM(results, offset)) return true;
+	if (decodeOhm(results, offset)) return true;
 #endif  // DECODE_OHM
 #if DECODE_HASH
   // decodeHash returns a hash on any input.
