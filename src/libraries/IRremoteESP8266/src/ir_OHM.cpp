@@ -1,5 +1,6 @@
 /// @file
 /// @brief Support for the Ohm sealing LED lights.
+/// @see https://github.com/crankyoldgit/IRremoteESP8266/issues/706
 // Supports:
 //   Brand: Ohm,  Model: IR blaster.
 
