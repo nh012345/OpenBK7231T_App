@@ -1,11 +1,7 @@
-// Copyright 2019 David Conran (crankyoldgit)
 /// @file
-/// @brief Support for the Inax Robot Toilet IR protocols.
-/// @see https://www.lixil-manual.com/GCW-1365-16050/GCW-1365-16050.pdf
-/// @see https://github.com/crankyoldgit/IRremoteESP8266/issues/706
-
+/// @brief Support for the Ohm sealing LED lights.
 // Supports:
-//   Brand: Lixil,  Model: Inax DT-BA283 Toilet
+//   Brand: Ohm,  Model: IR blaster.
 
 // #include <algorithm>
 #include "IRrecv.h"
@@ -13,15 +9,15 @@
 #include "IRutils.h"
 
 // Constants
-const uint16_t kInaxTick = 500;
-const uint16_t kInaxHdrMark = 9000;
-const uint16_t kInaxHdrSpace = 4500;
-const uint16_t kInaxBitMark = 560;
-const uint16_t kInaxOneSpace = 1675;
-const uint16_t kInaxZeroSpace = kInaxBitMark;
-const uint16_t kInaxMinGap = 40000;
+const uint16_t kOhmTick = 700;
+const uint16_t kOhmHdrMark = 9000;
+const uint16_t kOhmHdrSpace = 4500;
+const uint16_t kOhmBitMark = 700;
+const uint16_t kOhmOneSpace = 2100;
+const uint16_t kOhmZeroSpace = kOhmBitMark;
+const uint16_t kOhmMinGap = 36000;
 
-#if SEND_INAX
+#if SEND_OHM
 /// Send a Inax Toilet formatted message.
 /// Status: STABLE / Working.
 /// @param[in] data The message to be sent.
@@ -30,16 +26,16 @@ const uint16_t kInaxMinGap = 40000;
 /// @see https://github.com/crankyoldgit/IRremoteESP8266/issues/706
 void IRsend::sendInax(const uint64_t data, const uint16_t nbits,
                       const uint16_t repeat) {
-  sendGeneric(kInaxHdrMark, kInaxHdrSpace,
-              kInaxBitMark, kInaxOneSpace,
-              kInaxBitMark, kInaxZeroSpace,
-              kInaxBitMark, kInaxMinGap,
+  sendGeneric(kOhmHdrMark, kOhmHdrSpace,
+              kOhmBitMark, kOhmOneSpace,
+              kOhmBitMark, kOhmZeroSpace,
+              kOhmBitMark, kOhmMinGap,
               data, nbits, 38, true, repeat, kDutyDefault);
 }
-#endif  // SEND_INAX
+#endif  // SEND_OHM
 
-#if DECODE_INAX
-/// Decode the supplied Inax Toilet message.
+#if DECODE_OHM
+/// Decode the supplied Ohm sealing LED light IR blaster.
 /// Status: Stable / Known working.
 /// @param[in,out] results Ptr to the data to decode & where to store the result
 /// @param[in] offset The starting index to use when attempting to decode the
@@ -48,26 +44,26 @@ void IRsend::sendInax(const uint64_t data, const uint16_t nbits,
 /// @param[in] strict Flag indicating if we should perform strict matching.
 /// @return True if it can decode it, false if it can't.
 /// @see https://github.com/crankyoldgit/IRremoteESP8266/issues/706
-bool IRrecv::decodeInax(decode_results *results, uint16_t offset,
+bool IRrecv::decodeOhm(decode_results *results, uint16_t offset,
                         const uint16_t nbits, const bool strict) {
-  if (strict && nbits != kInaxBits)
-    return false;  // We expect Inax to be a certain sized message.
+  if (strict && nbits != kOhmBits)
+    return false;  // We expect Ohm to be a certain sized message.
 
   uint64_t data = 0;
 
   // Match Header + Data + Footer
   if (!matchGeneric(results->rawbuf + offset, &data,
                     results->rawlen - offset, nbits,
-                    kInaxHdrMark, kInaxHdrSpace,
-                    kInaxBitMark, kInaxOneSpace,
-                    kInaxBitMark, kInaxZeroSpace,
-                    kInaxBitMark, kInaxMinGap, true)) return false;
+                    kOhmHdrMark, kOhmHdrSpace,
+                    kOhmBitMark, kOhmOneSpace,
+                    kOhmBitMark, kOhmZeroSpace,
+                    kOhmBitMark, kOhmMinGap, true)) return false;
   // Success
   results->bits = nbits;
   results->value = data;
-  results->decode_type = decode_type_t::INAX;
+  results->decode_type = decode_type_t::OHM;
   results->command = 0;
   results->address = 0;
   return true;
 }
-#endif  // DECODE_INAX
+#endif  // DECODE_OHM
