@@ -1433,9 +1433,6 @@ const uint16_t kRhossStateLength = 12;
 const uint16_t kRhossBits = kRhossStateLength * 8;
 const uint16_t kRhossDefaultRepeat = 26;
 const uint16_t kClimaButlerBits = 52;
-const uint16_t kOhmBits = 24;
-const uint16_t kOhmMinRepeat = kSingleRepeat;
-
 
 // Legacy defines. (Deprecated)
 #define AIWA_RC_T501_BITS             kAiwaRcT501Bits
