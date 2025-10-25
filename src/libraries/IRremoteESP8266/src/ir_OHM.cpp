@@ -24,7 +24,7 @@ const uint16_t kOhmMinGap = 36000;
 /// @param[in] nbits The number of bits of message to be sent.
 /// @param[in] repeat The number of times the command is to be repeated.
 /// @see https://github.com/crankyoldgit/IRremoteESP8266/issues/706
-void IRsend::sendInax(const uint64_t data, const uint16_t nbits,
+void IRsend::sendOhm(const uint64_t data, const uint16_t nbits,
                       const uint16_t repeat) {
   sendGeneric(kOhmHdrMark, kOhmHdrSpace,
               kOhmBitMark, kOhmOneSpace,
