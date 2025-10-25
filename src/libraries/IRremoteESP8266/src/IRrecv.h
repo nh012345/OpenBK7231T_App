@@ -878,7 +878,7 @@ class IRrecv {
                     const bool strict = true);
 #endif  // DECODE_WOWWEE
 #if DECODE_OHM
-  bool decodeOHM(decode_results *results, uint16_t offset = kStartOffset,
+  bool decodeOhm(decode_results *results, uint16_t offset = kStartOffset,
                   const uint16_t nbits = kOhmBits,
                   const bool strict = true);
 #endif  // DECODE_OHM
