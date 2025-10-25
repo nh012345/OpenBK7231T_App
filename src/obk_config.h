@@ -5,7 +5,7 @@
 #define OBK_CONFIG_H
 
 #define OBK_VARIANT_DEFAULT						0
-#define OBK_VARIANT_BERRY						1
+#define OBK_VARIANT_BERRY	  					1
 #define OBK_VARIANT_TUYAMCU						2
 #define OBK_VARIANT_POWERMETERING				3
 #define OBK_VARIANT_IRREMOTEESP					4
