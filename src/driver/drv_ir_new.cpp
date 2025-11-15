@@ -612,6 +612,9 @@ extern "C" commandResult_t IR_Send_Cmd(const void *context, const char *cmd, con
 			case decode_type_t::NEC:
 				pIRsend->sendNEC((uint64_t)pIRsend->encodeNEC(addr,command));
 				break;
+			case decode_type_t::OHM:
+				pIRsend->sendOHM((uint64_t)pIRsend->encodeOHM(addr,command));
+				break;
 			case decode_type_t::PANASONIC:
 				pIRsend->sendPanasonic((uint16_t)addr,(uint32_t)command);
 				break;
