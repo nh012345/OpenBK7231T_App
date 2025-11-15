@@ -218,6 +218,7 @@ set(OBKM_SRC_CXX
 	${OBK_SRCS}libraries/IRremoteESP8266/src/ir_NEC.cpp
 	${OBK_SRCS}libraries/IRremoteESP8266/src/ir_Neoclima.cpp
 	${OBK_SRCS}libraries/IRremoteESP8266/src/ir_Nikai.cpp
+	${OBK_SRCS}libraries/IRremoteESP8266/src/ir_OHM.cpp
 	${OBK_SRCS}libraries/IRremoteESP8266/src/ir_Panasonic.cpp
 	${OBK_SRCS}libraries/IRremoteESP8266/src/ir_Pioneer.cpp
 	${OBK_SRCS}libraries/IRremoteESP8266/src/ir_Pronto.cpp
