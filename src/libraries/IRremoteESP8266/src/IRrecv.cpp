@@ -1197,8 +1197,8 @@ bool IRrecv::decode(decode_results *results, irparams_t *save,
     if (decodeCarrierAC84(results, offset)) return true;
 #endif  // DECODE_CARRIER_AC84
 #if DECODE_OHM
-	DPRINTLN("Attempting Ohm decode");
-	if (decodeOhm(results, offset)) return true;
+	DPRINTLN("Attempting OHM decode");
+	if (decodeOHM(results, offset)) return true;
 #endif  // DECODE_OHM
   // Typically new protocols are added above this line.
   }
