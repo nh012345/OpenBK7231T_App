@@ -25,7 +25,7 @@ const uint16_t kOhmMinGap = 36000;
 /// @param[in] nbits The number of bits of message to be sent.
 /// @param[in] repeat The number of times the command is to be repeated.
 /// @see https://github.com/crankyoldgit/IRremoteESP8266/issues/706
-void IRsend::sendOhm(const uint64_t data, const uint16_t nbits,
+void IRsend::sendOHM(const uint64_t data, const uint16_t nbits,
                       const uint16_t repeat) {
   sendGeneric(kOhmHdrMark, kOhmHdrSpace,
               kOhmBitMark, kOhmOneSpace,
@@ -45,7 +45,7 @@ void IRsend::sendOhm(const uint64_t data, const uint16_t nbits,
 /// @param[in] strict Flag indicating if we should perform strict matching.
 /// @return True if it can decode it, false if it can't.
 /// @see https://github.com/crankyoldgit/IRremoteESP8266/issues/706
-bool IRrecv::decodeOhm(decode_results *results, uint16_t offset,
+bool IRrecv::decodeOHM(decode_results *results, uint16_t offset,
                         const uint16_t nbits, const bool strict) {
   if (strict && nbits != kOhmBits)
     return false;  // We expect Ohm to be a certain sized message.
