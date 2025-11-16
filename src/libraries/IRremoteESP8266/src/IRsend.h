@@ -881,7 +881,7 @@ class IRsend {
                   const uint16_t repeat = kWowweeDefaultRepeat);
 #endif  // SEND_WOWWEE
 #if SEND_OHM
-  void sendOhm(const uint64_t data, const uint16_t nbits = kOhmBits,
+  void sendOHM(const uint64_t data, const uint16_t nbits = kOhmBits,
                 const uint16_t repeat = kOhmMinRepeat);
 #endif  // SEND_OHM
 
