@@ -1158,7 +1158,7 @@ bool IRsend::send(const decode_type_t type, const uint64_t data,
 #endif  // SEND_ZEPEAL
 #if SEND_OHM
     case OHM:
-      sendOhm(data, nbits, min_repeat);
+      sendOHM(data, nbits, min_repeat);
       break;
 #endif  // SEND_Ohm
     default:
