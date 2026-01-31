@@ -12,6 +12,7 @@
 #include "cmnds/cmd_public.h"
 #include "i2c/drv_i2c_public.h"
 #include "driver/drv_tuyaMCU.h"
+#include "driver/drv_girierMCU.h"
 #include "driver/drv_public.h"
 #include "hal/hal_flashVars.h"
 #include "hal/hal_pins.h"
@@ -477,7 +478,8 @@ int PIN_IOR_NofChan(int test){
 	// Some roles don't need any channels
 	if (test == IOR_SGP_CLK || test == IOR_SHT3X_CLK || test == IOR_CHT83XX_CLK || test == IOR_Button_ToggleAll || test == IOR_Button_ToggleAll_n
 			|| test == IOR_BL0937_CF || test == IOR_BL0937_CF1 || test == IOR_BL0937_SEL
-			|| test == IOR_LED_WIFI || test == IOR_LED_WIFI_n || test == IOR_LED_WIFI_n
+			|| test == IOR_LED_WIFI || test == IOR_LED_WIFI_n || test == IOR_BL0937_SEL_n
+			|| test == IOR_RCRecv || test == IOR_RCRecv_nPup
 			|| (test >= IOR_IRRecv && test <= IOR_DHT11)
 			|| (test >= IOR_SM2135_DAT && test <= IOR_BP1658CJ_CLK)
 			|| (test == IOR_HLW8112_SCSN)) {
@@ -718,7 +720,7 @@ bool BTN_ShouldInvert(int index) {
 		role == IOR_DigitalInput_n || role == IOR_DigitalInput_NoPup_n
 		|| role == IOR_Button_NextColor_n || role == IOR_Button_NextDimmer_n
 		|| role == IOR_Button_NextTemperature_n || role == IOR_Button_ScriptOnly_n
-		|| role == IOR_SmartButtonForLEDs_n) {
+		|| role == IOR_SmartButtonForLEDs_n || role == IOR_Button_pd_n) {
 		return true;
 	}
 	if (CFG_HasFlag(OBK_FLAG_DOORSENSOR_INVERT_STATE)) {
@@ -1028,6 +1030,7 @@ void PIN_SetPinRoleForPinIndex(int index, int role) {
 		switch (role)
 		{
 		case IOR_Button:
+		case IOR_Button_pd: // TODO: is ok falling?
 		case IOR_Button_ToggleAll:
 		case IOR_Button_NextColor:
 		case IOR_Button_NextDimmer:
@@ -1036,6 +1039,7 @@ void PIN_SetPinRoleForPinIndex(int index, int role) {
 		case IOR_SmartButtonForLEDs:
 			falling = 1;
 		case IOR_Button_n:
+		case IOR_Button_pd_n: // TODO: is ok falling?
 		case IOR_Button_ToggleAll_n:
 		case IOR_Button_NextColor_n:
 		case IOR_Button_NextDimmer_n:
@@ -1049,7 +1053,12 @@ void PIN_SetPinRoleForPinIndex(int index, int role) {
 			setGPIActive(index, 1, falling);
 
 			// digital input
-			HAL_PIN_Setup_Input_Pullup(index);
+			if (role == IOR_Button_pd_n || IOR_Button_pd) {
+				HAL_PIN_Setup_Input_Pulldown(index);
+			}
+			else {
+				HAL_PIN_Setup_Input_Pullup(index);
+			}
 
 			// init button after initializing pin role
 			NEW_button_init(bt, button_generic_get_gpio_value, 0);
@@ -1065,13 +1074,19 @@ void PIN_SetPinRoleForPinIndex(int index, int role) {
 			break;
 
 		case IOR_ToggleChannelOnToggle:
+		case IOR_ToggleChannelOnToggle_pd:
 		{
 			// add to active inputs
 			falling = 1;
 			setGPIActive(index, 1, falling);
 
 			// digital input
-			HAL_PIN_Setup_Input_Pullup(index);
+			if (role == IOR_ToggleChannelOnToggle_pd) {
+				HAL_PIN_Setup_Input_Pulldown(index);
+			}
+			else {
+				HAL_PIN_Setup_Input_Pullup(index);
+			}
 			// otherwise we get a toggle on start			
 #ifdef PLATFORM_BEKEN
 			//20231217 XJIKKA
@@ -1297,7 +1312,9 @@ static void Channel_OnChanged(int ch, int prevValue, int iFlags) {
 #if ENABLE_DRIVER_TUYAMCU
 	TuyaMCU_OnChannelChanged(ch, iVal);
 #endif
-
+#if ENABLE_DRIVER_GIRIERMCU
+	GirierMCU_OnChannelChanged(ch, iVal);
+#endif
 	for (i = 0; i < PLATFORM_GPIO_MAX; i++) {
 		if (g_cfg.pins.channels[i] == ch) {
 			if (g_cfg.pins.roles[i] == IOR_Relay || g_cfg.pins.roles[i] == IOR_BAT_Relay || g_cfg.pins.roles[i] == IOR_LED) {
@@ -1366,6 +1383,7 @@ int ChannelType_GetDivider(int type) {
 	case ChType_Power_div10:
 	case ChType_Frequency_div10:
 	case ChType_ReadOnly_div10:
+	case ChType_Current_div10:
 		return 10;
 	case ChType_Frequency_div100:
 	case ChType_Current_div100:
@@ -1419,6 +1437,7 @@ const char *ChannelType_GetUnit(int type) {
 	case ChType_LeakageCurrent_div1000:
 	case ChType_Current_div1000:
 	case ChType_Current_div100:
+	case ChType_Current_div10:
 		return "A";
 	case ChType_EnergyTotal_kWh_div1000:
 	case ChType_EnergyExport_kWh_div1000:
@@ -1470,6 +1489,7 @@ const char *ChannelType_GetTitle(int type) {
 		return "Frequency";
 	case ChType_Current_div1000:
 	case ChType_Current_div100:
+	case ChType_Current_div10:
 		return "Current";
 	case ChType_LeakageCurrent_div1000:
 		return "Leakage"; 
@@ -1887,12 +1907,18 @@ bool CHANNEL_ShouldBePublished(int ch) {
 		return true;
 	}
 #ifdef ENABLE_DRIVER_TUYAMCU
-	// publish if channel is used by TuyaMCU (no pin role set), for example door sensor state with power saving V0 protocol
+	// publish if channel is used by TuyaMCU or Girier (no pin role set), for example door sensor state with power saving V0 protocol
 	// Not enabled by default, you have to set OBK_FLAG_TUYAMCU_ALWAYSPUBLISHCHANNELS flag
 	if (CFG_HasFlag(OBK_FLAG_TUYAMCU_ALWAYSPUBLISHCHANNELS) && TuyaMCU_IsChannelUsedByTuyaMCU(ch)) {
 		return true;
 	}
 #endif
+#ifdef ENABLE_DRIVER_GIRIERMCU
+	if (CFG_HasFlag(OBK_FLAG_TUYAMCU_ALWAYSPUBLISHCHANNELS) && GirierMCU_IsChannelUsedByGirierMCU(ch)) {
+		return true;
+	}
+#endif
+
 	if (CFG_HasFlag(OBK_FLAG_MQTT_PUBLISH_ALL_CHANNELS)) {
 		return true;
 	}
@@ -2238,7 +2264,8 @@ void PIN_ticks(void* param)
 
 #endif
 			}
-			else if (g_cfg.pins.roles[i] == IOR_ToggleChannelOnToggle) {
+			else if (g_cfg.pins.roles[i] == IOR_ToggleChannelOnToggle
+				|| g_cfg.pins.roles[i] == IOR_ToggleChannelOnToggle_pd) {
 				value = PIN_ReadDigitalInputValue_WithInversionIncluded(i);
 			
 				if (value) {
@@ -2394,6 +2421,9 @@ const char* g_channelTypeNames[] = {
 	"EnergyImport_kWh_div1000",
 	"Enum",
 	"ReadOnlyEnum",
+	"Current_div10",
+	"error",
+	"error",
 	"error",
 	"error",
 };
@@ -2731,6 +2761,79 @@ int XJ_MovingAverage_int(int aprevvalue, int aactvalue) {
 	return res;
 }
 #endif
+
+
+// use "complete" search as default, only "simple" one for these platforms
+//#if !(PLATFORM_LN882H || PLATFORM_W800 || PLATFORM_TXW81X || (PLATFORM_ESPIDF && ! CONFIG_IDF_TARGET_ESP32C3))
+#if !(PLATFORM_LN882H || PLATFORM_TXW81X || (PLATFORM_ESPIDF && ! CONFIG_IDF_TARGET_ESP32C3))
+// start helpers for finding (su-)string in pinalias
+
+// code to find a pin index by name
+// we migth have "complex" or alternate names like
+// "IO0/A0" or even "IO2 (B2/TX1)" and would like all to match
+// so we need to make sure the substring is found an propperly "terminated"
+// by '\0', '/' , '(', ')' or ' '
+
+
+// Define valid start and end characters for a string (e.g. for "(RX1/IO10)" we would need "()/"
+int is_valid_start_end(char ch) {
+    // Check if character is in defined terminators
+    return strchr(" ()/\0", ch) != NULL;
+}
+
+// new version, case insensitive, use 
+// wal_stricmp() and (new introduced) wal_stristr()
+// from new_common.c
+int str_match_in_alias(const char* alias, const char* str) {
+    size_t alen = strlen(alias), slen = strlen(str);
+
+    if (slen > alen) return 0; // No match
+
+    // found at start of alisa, no test for a valid "start" 
+    if (wal_strnicmp(alias, str, slen) == 0) {
+        return (slen == alen || is_valid_start_end(alias[slen]));
+    }
+
+    // not at start, so found-1 is a valid position in string
+    for (char *found = wal_stristr(alias + 1, str); found; found = wal_stristr(found + 1, str)) {
+    
+        if (is_valid_start_end(*(found - 1)) && (is_valid_start_end(found[slen]) || found[slen] == '\0')) {
+            return 1; // Match found
+        }
+    }
+
+    return 0; // No match
+}
+
+// END helpers
+
+int PIN_FindIndexFromString(const char *name) {
+	if (strIsInteger(name)) {
+		return atoi(name);
+	}
+	for (int i = 0; i < PLATFORM_GPIO_MAX; i++) {
+		if (str_match_in_alias(HAL_PIN_GetPinNameAlias(i), name)) {
+			return i;
+		}
+	}
+	return -1;
+}
+#else
+int PIN_FindIndexFromString(const char *name) {
+	if (strIsInteger(name)) {
+		return atoi(name);
+	}
+	for (int i = 0; i < PLATFORM_GPIO_MAX; i++) {
+		if (!stricmp(HAL_PIN_GetPinNameAlias(i), name)) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+#endif
+
+
 
 void PIN_AddCommands(void)
 {

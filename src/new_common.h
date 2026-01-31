@@ -114,6 +114,11 @@ typedef long BaseType_t;
 #define DEVICENAME_PREFIX_SHORT "ln882h"
 #define PLATFORM_MCU_NAME "LN882H"
 #define MANUFACTURER "LightningSemi"
+#elif PLATFORM_LN8825
+#define DEVICENAME_PREFIX_FULL "OpenLN8825"
+#define DEVICENAME_PREFIX_SHORT "ln8825"
+#define PLATFORM_MCU_NAME "LN8825"
+#define MANUFACTURER "LightningSemi"
 #elif PLATFORM_ESPIDF
 #define MANUFACTURER "Espressif"
 #define DEVICENAME_PREFIX_SHORT "esp"
@@ -221,6 +226,8 @@ This platform is not supported, error!
 #define USER_SW_VER "W800_Test"
 #elif defined(PLATFORM_LN882H)
 #define USER_SW_VER "LN882H_Test"
+#elif defined(PLATFORM_LN8825)
+#define USER_SW_VER "LN8825_Test"
 #elif defined(PLATFORM_ESPIDF)
 #define USER_SW_VER PLATFORM_MCU_NAME "_Test"
 #elif defined(PLATFORM_TR6260)
@@ -309,6 +316,8 @@ This platform is not supported, error!
 #define bk_printf printf
 
 // generic
+#include <stdbool.h>
+
 typedef int bool;
 #define true 1
 #define false 0
@@ -478,6 +487,8 @@ OSStatus rtos_suspend_thread(beken_thread_t* thread);
 #include <portable.h>
 #include <semphr.h>
 #include "lwip/sys.h"
+#include <stdbool.h>
+
 
 #define GLOBAL_INT_DECLARATION()	;
 #define GLOBAL_INT_DISABLE()		;
@@ -520,7 +531,7 @@ OSStatus rtos_suspend_thread(beken_thread_t* thread);
 
 #define OBK_OTA_EXTENSION ".img"
 
-#elif PLATFORM_LN882H
+#elif PLATFORM_LN882H || PLATFORM_LN8825
 
 #include <FreeRTOS.h>
 #include <task.h>
@@ -534,7 +545,6 @@ OSStatus rtos_suspend_thread(beken_thread_t* thread);
 
 #define lwip_close_force(x) lwip_close(x)
 #define bk_printf printf
-
 #define kNoErr                      0       //! No error occurred.
 #define rtos_delay_milliseconds OS_MsDelay
 typedef void *beken_thread_arg_t;
@@ -553,8 +563,22 @@ OSStatus rtos_create_thread( beken_thread_t* thread,
 							uint32_t stack_size, beken_thread_arg_t arg );
 OSStatus rtos_suspend_thread(beken_thread_t* thread);
 
+#if PLATFORM_LN8825
+#define malloc os_malloc
+#include "utils/debug/log.h"
+#undef bk_printf
+#define bk_printf(...) LOG(LOG_LVL_INFO, __VA_ARGS__)
+#define printf(...) LOG(LOG_LVL_INFO, __VA_ARGS__)
+#define hal_flash_read FLASH_Read
+#define hal_flash_program FLASH_Program
+#define hal_flash_erase FLASH_Erase
+#define OBK_OTA_EXTENSION		".img"
+#define OBK_OTA_NAME_EXTENSION	"_ota"
+#else
 #define OBK_OTA_EXTENSION		".bin"
 #define OBK_OTA_NAME_EXTENSION	"_OTA"
+#endif
+
 
 #elif PLATFORM_ESPIDF || PLATFORM_ESP8266
 
@@ -995,6 +1019,7 @@ char *strdup(const char *s);
 const char* skipToNextWord(const char* p);
 void stripDecimalPlaces(char *p, int maxDecimalPlaces);
 int wal_stricmp(const char *a, const char *b);
+char *wal_stristr(const char *haystack, const char *needle);
 int wal_strnicmp(const char *a, const char *b, int count);
 int strcat_safe(char *tg, const char *src, int tgMaxLen);
 int strcpy_safe(char *tg, const char *src, int tgMaxLen);
@@ -1063,7 +1088,8 @@ typedef enum
     EXCELLENT,
 } WIFI_RSSI_LEVEL;
 
-#if PLATFORM_LN882H || PLATFORM_REALTEK || PLATFORM_ECR6600 || PLATFORM_TR6260 || PLATFORM_XRADIO || PLATFORM_TXW81X
+#if PLATFORM_LN882H || PLATFORM_REALTEK || PLATFORM_ECR6600 || PLATFORM_TR6260 || PLATFORM_XRADIO \
+ || PLATFORM_TXW81X || PLATFORM_LN8825 || PLATFORM_ESP8266
 #define IP_STRING_FORMAT	"%u.%u.%u.%u"
 #else
 #define IP_STRING_FORMAT	"%hhu.%hhu.%hhu.%hhu"

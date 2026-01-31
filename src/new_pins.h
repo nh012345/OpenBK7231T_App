@@ -576,14 +576,14 @@ typedef enum ioRole_e {
 	IOR_PWM_ScriptOnly_n,
 	//iodetail:{"name":"Counter_f",
 	//iodetail:"title":"TODO",
-	//iodetail:"descr":"",
+	//iodetail:"descr":"Counts pulses on falling edge (transition from high to low). Each transitions adds 1 to linked channel.",
 	//iodetail:"enum":"IOR_Counter_f",
 	//iodetail:"file":"new_pins.h",
 	//iodetail:"driver":""}
 	IOR_Counter_f,
 	//iodetail:{"name":"Counter_r",
 	//iodetail:"title":"TODO",
-	//iodetail:"descr":"",
+	//iodetail:"descr":"Counts pulses on rising edge (transition from low to high). Each transitions adds 1 to linked channel.",
 	//iodetail:"enum":"IOR_Counter_r",
 	//iodetail:"file":"new_pins.h",
 	//iodetail:"driver":""}
@@ -616,6 +616,41 @@ typedef enum ioRole_e {
 	//iodetail:"file":"new_pins.h",
 	//iodetail:"driver":"HLW8112SPI"}
 	IOR_HLW8112_SCSN,
+	//iodetail:{"name":"RCRecv",
+	//iodetail:"title":"RCRecv Pin",
+	//iodetail:"descr":"433MHz RC receiver input (uses internal pull-up).",
+	//iodetail:"enum":"IOR_RCRecv",
+	//iodetail:"file":"new_pins.h",
+	//iodetail:"driver":"RC"}
+	IOR_RCRecv,
+	//iodetail:{"name":"RCRecv_nPup",
+	//iodetail:"title":"RCRecv_nPup Pin",
+	//iodetail:"descr":"433MHz RC receiver input without internal pull-up.",
+	//iodetail:"enum":"IOR_RCRecv_nPup",
+	//iodetail:"file":"new_pins.h",
+	//iodetail:"driver":"RC"}
+	IOR_RCRecv_nPup,
+	//iodetail:{"name":"Button_pd",
+	//iodetail:"title":"TODO",
+	//iodetail:"descr":"same as Button but with pulldown instead pullup",
+	//iodetail:"enum":"IOR_Button_pd",
+	//iodetail:"file":"new_pins.h",
+	//iodetail:"driver":""}
+	IOR_Button_pd,
+	//iodetail:{"name":"Button_pd_n",
+	//iodetail:"title":"TODO",
+	//iodetail:"descr":"same as Button but with pulldown instead pullup",
+	//iodetail:"enum":"IOR_Button_pd_n",
+	//iodetail:"file":"new_pins.h",
+	//iodetail:"driver":""}
+	IOR_Button_pd_n,
+	//iodetail:{"name":"ToggleChannelOnToggle_pd",
+	//iodetail:"title":"TODO",
+	//iodetail:"descr":"pulldown version of ToggleChannelOnToggle",
+	//iodetail:"enum":"IOR_ToggleChannelOnToggle_pd",
+	//iodetail:"file":"new_pins.h",
+	//iodetail:"driver":""}
+	IOR_ToggleChannelOnToggle_pd,
 	//iodetail:{"name":"Total_Options",
 	//iodetail:"title":"TODO",
 	//iodetail:"descr":"Current total number of available IOR roles",
@@ -1085,6 +1120,13 @@ typedef enum channelType_e {
 	//chandetail:"file":"new_pins.h",
 	//chandetail:"driver":""}
 	ChType_ReadOnlyEnum,
+	//chandetail:{"name":"Current_div10",
+	//chandetail:"title":"TODO",
+	//chandetail:"descr":"For TuyaMCU power metering. Not used for BL09** and CSE** sensors. Divider is used by TuyaMCU, because TuyaMCU sends always values as integers so we have to divide them before displaying on UI",
+	//chandetail:"enum":"ChType_Current_div10",
+	//chandetail:"file":"new_pins.h",
+	//chandetail:"driver":""}
+	ChType_Current_div10,
 	//chandetail:{"name":"Max",
 	//chandetail:"title":"TODO",
 	//chandetail:"descr":"This is the current total number of available channel types.",
@@ -1107,7 +1149,7 @@ typedef enum channelType_e {
 #define PLATFORM_GPIO_MAX 17
 #elif PLATFORM_W800
 #define PLATFORM_GPIO_MAX 44
-#elif PLATFORM_LN882H
+#elif PLATFORM_LN882H || PLATFORM_LN8825
 #define PLATFORM_GPIO_MAX 26
 #elif PLATFORM_ESPIDF
 #ifdef CONFIG_IDF_TARGET_ESP32C3
@@ -1130,7 +1172,8 @@ typedef enum channelType_e {
 #define PLATFORM_GPIO_MAX 0
 #endif
 #elif PLATFORM_ESP8266
-#define PLATFORM_GPIO_MAX 13
+// 2025-11-22 - I added ADC, so bump from 13 to 14
+#define PLATFORM_GPIO_MAX 14
 #elif PLATFORM_TR6260
 #define PLATFORM_GPIO_MAX 25
 #elif PLATFORM_RTL87X0C
@@ -1584,6 +1627,13 @@ bool CHANNEL_IsPowerRelayChannel(int ch);
 // See: enum channelType_t
 void CHANNEL_SetType(int ch, int type);
 int CHANNEL_GetType(int ch);
+bool CHANNEL_IsHumidity(int type);
+bool CHANNEL_IsTemperature(int type);
+bool CHANNEL_IsPressure(int type);
+bool CHANNEL_GetGenericOfType(float *out, bool(*checker)(int type));
+bool CHANNEL_GetGenericHumidity(float *out);
+bool CHANNEL_GetGenericTemperature(float *out);
+bool CHANNEL_GetGenericPressure(float *out);
 void CHANNEL_SetFirstChannelByTypeEx(int requiredType, int newVal, int ausemovingaverage);
 void CHANNEL_SetFirstChannelByType(int requiredType, int newVal);
 // CHANNEL_SET_FLAG_*
@@ -1635,5 +1685,10 @@ void FV_UpdateStartupSSIDIfChanged_StoredValue(int assidindex);
 float XJ_MovingAverage_float(float aprevvalue, float aactvalue);
 int XJ_MovingAverage_int(int aprevvalue, int aactvalue);
 #endif
+
+// Find index of a pin from string.
+// Either a number or an alias for a pin.
+// used e.g. for Tokenizer_GetPin()
+int PIN_FindIndexFromString(const char *name);
 
 #endif

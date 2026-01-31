@@ -268,7 +268,11 @@ static commandResult_t CMD_SetPinRole(const void *context, const char *cmd, cons
 		return CMD_RES_NOT_ENOUGH_ARGUMENTS;
 	}
 
-	pin = Tokenizer_GetArgInteger(0);
+	pin = Tokenizer_GetPin(0,-1);
+	if (pin==-1){
+		ADDLOG_INFO(LOG_FEATURE_CMD, "Unknown pin %s",Tokenizer_GetArg(0));
+		return CMD_RES_BAD_ARGUMENT;
+	}
 	role = Tokenizer_GetArg(1);
 
 	roleIndex = PIN_ParsePinRoleName(role);
@@ -437,16 +441,17 @@ static commandResult_t CMD_SetChannelPrivate(const void *context, const char *cm
 static commandResult_t CMD_GetReadings(const void *context, const char *cmd, const char *args, int cmdFlags){
 #ifdef ENABLE_DRIVER_BL0937
 	char tmp[96];
-	float v, c, p;
-    float e, elh;
+	float v, c, p, f;
+	float e, elh;
 
 	v = DRV_GetReading(OBK_VOLTAGE);
 	c = DRV_GetReading(OBK_CURRENT);
 	p = DRV_GetReading(OBK_POWER);
-    e = DRV_GetReading(OBK_CONSUMPTION_TOTAL);
-    elh = DRV_GetReading(OBK_CONSUMPTION_LAST_HOUR);
+	f = DRV_GetReading(OBK_FREQUENCY);
+	e = DRV_GetReading(OBK_CONSUMPTION_TOTAL);
+	elh = DRV_GetReading(OBK_CONSUMPTION_LAST_HOUR);
 
-	snprintf(tmp, sizeof(tmp), "%f %f %f %f %f",v,c,p,e,elh);
+	snprintf(tmp, sizeof(tmp), "%f %f %f %f %f %f",v,c,p,f,e,elh);
 
 	if(cmdFlags & COMMAND_FLAG_SOURCE_TCP) {
 		ADDLOG_INFO(LOG_FEATURE_RAW, tmp);
@@ -595,7 +600,7 @@ void CMD_InitChannelCommands(){
 	CMD_RegisterCommand("FullBootTime", CMD_FullBootTime, NULL);
 	//cmddetail:{"name":"SetChannelEnum","args":"[ChannelIndex][Value:Title][Value:Title]",
 	//cmddetail:"descr":"Creates a channel enumeration type.  Channel type must be set to Enum or ReadOnlyEnum. e.g. SetChannelEnum 1:One \"2:Enum Two\" 5:Five",
-	//cmddetail:"fn":"SetChannelEnum","file":"cmnds/cmd_channels.c","requires":"",
+	//cmddetail:"fn":"CMD_SetChannelEnum","file":"cmnds/cmd_channels.c","requires":"",
 	//cmddetail:"examples":""}
 	CMD_RegisterCommand("SetChannelEnum", CMD_SetChannelEnum, NULL);
 	//cmddetail:{"name":"SetChannelLabel","args":"[ChannelIndex][Str][bHideTogglePrefix]",
