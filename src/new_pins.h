@@ -1127,6 +1127,20 @@ typedef enum channelType_e {
 	//chandetail:"file":"new_pins.h",
 	//chandetail:"driver":""}
 	ChType_Current_div10,
+	//chandetail:{"name":"Illuminance_div10",
+	//chandetail:"title":"Illuminance_div10",
+	//chandetail:"descr":"Illuminance in Lux",
+	//chandetail:"enum":"ChType_Illuminance_div10",
+	//chandetail:"file":"new_pins.h",
+	//chandetail:"driver":""}
+	ChType_Illuminance_div10,
+	//chandetail:{"name":"Frequency",
+	//chandetail:"title":"TODO",
+	//chandetail:"descr":"For TuyaMCU power metering. Not used for BL09** and CSE** sensors.",
+	//chandetail:"enum":"ChType_Frequency",
+	//chandetail:"file":"new_pins.h",
+	//chandetail:"driver":""}
+	ChType_Frequency,
 	//chandetail:{"name":"Max",
 	//chandetail:"title":"TODO",
 	//chandetail:"descr":"This is the current total number of available channel types.",
@@ -1539,11 +1553,6 @@ typedef struct mainConfig_s {
 	char ping_host[64];
 	// ofs 0x000005E0 (dec 1504)
 	//char initCommandLine[512];
-#if PLATFORM_W600 || PLATFORM_W800
-#define ALLOW_SSID2 0
-#define ALLOW_WEB_PASSWORD 0
-	char initCommandLine[512];
-#else
 #define ALLOW_SSID2 1
 #define ALLOW_WEB_PASSWORD 1
 	char initCommandLine[1568];
@@ -1562,14 +1571,7 @@ typedef struct mainConfig_s {
 	// offset 0x00000CBB (3259 decimal)
 	byte disable_web_server;
 	// offset 0x00000CBC (3260 decimal)
-#if PLATFORM_BEKEN
-	obkFastConnectData_t fcdata;
-	// offset 0x00000D0C (3340 decimal)
-	char unused[244];
-#else
 	char unused[324];
-#endif
-#endif
 } mainConfig_t;
 
 // one sector is 4096 so it we still have some expand possibility

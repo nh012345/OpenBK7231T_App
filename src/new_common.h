@@ -572,6 +572,7 @@ OSStatus rtos_suspend_thread(beken_thread_t* thread);
 #define hal_flash_read FLASH_Read
 #define hal_flash_program FLASH_Program
 #define hal_flash_erase FLASH_Erase
+#define HAL_ADC_Init OBK_HAL_ADC_Init
 #define OBK_OTA_EXTENSION		".img"
 #define OBK_OTA_NAME_EXTENSION	"_ota"
 #else
@@ -732,8 +733,10 @@ extern u32 pwmout_pin2chan(PinName pin);
 #define os_free vPortFree
 
 #if PLATFORM_RTL8720D
+#undef vsprintf
 #undef vsnprintf
 #undef sprintf
+#undef snprintf
 #undef atoi
 #undef printf
 #endif
@@ -1028,7 +1031,7 @@ void urldecode2_safe(char *dst, const char *srcin, int maxDstLen);
 int strIsInteger(const char *s);
 
 #if !defined(PLATFORM_ESPIDF) && !defined(PLATFORM_TR6260) && !defined(PLATFORM_ECR6600) && !defined(PLATFORM_BL602) && \
-	!defined(PLATFORM_ESP8266)
+	!defined(PLATFORM_ESP8266) && !defined(PLATFORM_W800)
 
 const char* strcasestr(const char* str1, const char* str2);
 #endif

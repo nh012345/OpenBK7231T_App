@@ -4,6 +4,8 @@ if($ENV{APP_VERSION} MATCHES "^[0-9]+\\.[0-9]+\\.[0-9]+$")
     string(REPLACE "." ";" VERSION_LIST "$ENV{APP_VERSION}")
     list(GET VERSION_LIST 1 VER_MAJOR)
     list(GET VERSION_LIST 2 VER_MINOR)
+
+    math(EXPR VER_MINOR "${VER_MINOR} % 256")
 else()
     set(VER_MAJOR 0)
     set(VER_MINOR 1)
@@ -29,6 +31,7 @@ set(PROJ_ALL_SRC
 	${OBK_SRCS}hal/ln882h/hal_flashConfig_ln882h.c
 	${OBK_SRCS}hal/ln882h/hal_flashVars_ln882h.c
 	${OBK_SRCS}hal/ln882h/hal_generic_ln882h.c
+	${OBK_SRCS}hal/ln882h/hal_hwtimer_ln882h.c
 	${OBK_SRCS}hal/ln882h/hal_main_ln882h.c
 	${OBK_SRCS}hal/ln882h/hal_pins_ln882h.c
 	${OBK_SRCS}hal/ln882h/hal_wifi_ln882h.c
@@ -37,7 +40,6 @@ set(PROJ_ALL_SRC
 	${OBKM_SRC_CXX}
 	${BERRY_SRC_C}
 	${PRO_DIR}/main.c
-	${PRO_DIR}/usr_app.c
 	${PRO_DIR}/bsp/serial_hw.c
 	${PRO_DIR}/bsp/drv_adc_measure.c
 	${PRO_DIR}/startup/startup_ln882x_gcc.c
