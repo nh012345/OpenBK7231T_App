@@ -39,6 +39,7 @@
 
 
 #include "driver/drv_ntp.h"
+#include "driver/drv_mdns.h"
 #include "driver/drv_ssdp.h"
 #include "driver/drv_uart.h"
 
@@ -51,7 +52,7 @@
 
 void bg_register_irda_check_func(FUNCPTR func);
 extern void WFI(void);
-#elif PLATFORM_BL602
+#elif PLATFORM_BL602 && !PLATFORM_BL_NEW
 #include <bl_sys.h>
 #include <hosal_adc.h>
 #include <bl_wdt.h>
@@ -104,6 +105,7 @@ uint8_t g_StartupDelayOver = 0;
 uint32_t idleCount = 0;
 
 int DRV_SSDP_Active = 0;
+int DRV_MDNS_Active = 0;
 
 #define LOG_FEATURE LOG_FEATURE_MAIN
 
@@ -116,7 +118,8 @@ void Main_ForceUnsafeInit();
 #endif
 #if PLATFORM_BEKEN
 #define WFI_FUNC WFI
-#elif PLATFORM_BL602 || PLATFORM_REALTEK || PLATFORM_XRADIO || PLATFORM_W600 || PLATFORM_RDA5981 || PLATFORM_LN8825 || PLATFORM_LN882H
+#elif PLATFORM_BL602 || PLATFORM_REALTEK || PLATFORM_XRADIO || PLATFORM_W600 || PLATFORM_RDA5981 || PLATFORM_LN8825 \
+	|| PLATFORM_LN882H || PLATFORM_BL_NEW
 #define WFI_FUNC() __asm volatile("wfi")
 #elif PLATFORM_W800
 #define WFI_FUNC __WFI
@@ -188,7 +191,7 @@ pid_t _getpid()
 
 #endif
 
-#if PLATFORM_BL602
+#if PLATFORM_BL602 && !PLATFORM_BL_NEW
 /// Read the Internal Temperature Sensor as Float. Returns 0 if successful.
 /// Based on bl_tsen_adc_get in https://github.com/lupyuen/bl_iot_sdk/blob/master/components/hal_drv/bl602_hal/bl_adc.c#L224-L282
 static int get_tsen_adc(
@@ -247,7 +250,7 @@ void extended_app_waiting_for_launch2(void) {
 #endif
 
 
-#if PLATFORM_ESPIDF || PLATFORM_REALTEK_NEW
+#if PLATFORM_ESPIDF || PLATFORM_REALTEK_NEW || PLATFORM_BL_NEW
 
 int LWIP_GetMaxSockets() {
 	return 0;
@@ -259,7 +262,7 @@ int LWIP_GetActiveSockets() {
 
 #if PLATFORM_BL602 || PLATFORM_W800 || PLATFORM_W600 || PLATFORM_LN882H || PLATFORM_LN8825 \
 	|| PLATFORM_ESPIDF || PLATFORM_TR6260 || PLATFORM_REALTEK || PLATFORM_ECR6600 \
-	|| PLATFORM_XRADIO || PLATFORM_ESP8266
+	|| PLATFORM_XRADIO || PLATFORM_ESP8266 || PLATFORM_BL_NEW
 
 OSStatus rtos_create_thread(beken_thread_t* thread,
 	uint8_t priority, const char* name,
@@ -562,6 +565,9 @@ void Main_OnWiFiStatusChange(int code)
 				ScheduleDriverStart("SSDP", 5);
 				//DRV_SSDP_Restart(); // this kills things
 			}
+			if (DRV_MDNS_Active) {
+				ScheduleDriverStart("MDNS", 5);
+			}
 		}
 #if defined(PLATFORM_LN882H) || PLATFORM_LN8825
 		// LN882H hack, maybe place somewhere else?
@@ -713,7 +719,7 @@ bool Main_HasFastConnect() {
 	}
 	return false;
 }
-#if PLATFORM_LN882H || PLATFORM_ESPIDF || PLATFORM_ESP8266 || PLATFORM_LN8825
+#if PLATFORM_LN882H || PLATFORM_ESPIDF || PLATFORM_ESP8266 || PLATFORM_LN8825 || PLATFORM_BL_NEW
 // Quick hack to display LN-only temperature,
 // we may improve it in the future
 extern float g_wifi_temperature;
@@ -758,7 +764,7 @@ void Main_OnEverySecond()
 #else
 		g_wifi_temperature = (-0.457f * temperature) + 188.474f;
 #endif
-#elif PLATFORM_BL602
+#elif PLATFORM_BL602 && !PLATFORM_BL_NEW
 		get_tsen_adc(&g_wifi_temperature, 0);
 #elif PLATFORM_LN882H
 		// this is set externally, I am just leaving comment here
@@ -808,7 +814,7 @@ void Main_OnEverySecond()
 #ifndef OBK_DISABLE_ALL_DRIVERS
 	DRV_OnEverySecond();
 #if defined(PLATFORM_BEKEN) || defined(WINDOWS) || defined(PLATFORM_BL602) || defined(PLATFORM_ESPIDF) \
- || defined (PLATFORM_RTL87X0C) || PLATFORM_ESP8266
+ || defined (PLATFORM_RTL87X0C) || PLATFORM_ESP8266 && !PLATFORM_BL_NEW
 	UART_RunEverySecond();
 #endif
 #endif
@@ -1203,7 +1209,8 @@ void QuickTick(void* param)
 #if WINDOWS
 
 #elif PLATFORM_BL602 || PLATFORM_W600 || PLATFORM_W800 || PLATFORM_TR6260 || defined(PLATFORM_REALTEK) || PLATFORM_ECR6600 \
-	|| PLATFORM_ESP8266 || PLATFORM_ESPIDF || PLATFORM_XRADIO || PLATFORM_LN882H || PLATFORM_TXW81X || PLATFORM_RDA5981 || PLATFORM_LN8825
+	|| PLATFORM_ESP8266 || PLATFORM_ESPIDF || PLATFORM_XRADIO || PLATFORM_LN882H || PLATFORM_TXW81X || PLATFORM_RDA5981 || PLATFORM_LN8825 \
+	|| PLATFORM_BL_NEW
 void quick_timer_thread(void* param)
 {
 	while (1) {
@@ -1219,7 +1226,7 @@ void QuickTick_StartThread(void)
 #if WINDOWS
 
 #elif PLATFORM_BL602 || PLATFORM_W600 || PLATFORM_W800 || PLATFORM_TR6260 || defined(PLATFORM_REALTEK) || PLATFORM_ECR6600 \
-	|| PLATFORM_ESP8266 || PLATFORM_ESPIDF || PLATFORM_XRADIO || PLATFORM_LN882H || PLATFORM_LN8825
+	|| PLATFORM_ESP8266 || PLATFORM_ESPIDF || PLATFORM_XRADIO || PLATFORM_LN882H || PLATFORM_LN8825 || PLATFORM_BL_NEW
 	xTaskCreate(quick_timer_thread, "quick", QT_STACK_SIZE, NULL, 15, NULL);
 #elif PLATFORM_TXW81X
 	os_task_create("quick", quick_timer_thread, NULL, 15, 0, NULL, QT_STACK_SIZE);
@@ -1264,7 +1271,7 @@ int Main_IsConnectedToWiFi()
 // called from idle thread each loop.
 // - just so we know it is running.
 #if PLATFORM_ESPIDF || PLATFORM_ESP8266 || PLATFORM_BL602 || (PLATFORM_REALTEK && !PLATFORM_REALTEK_NEW) \
-|| PLATFORM_XRADIO || PLATFORM_LN8825 || PLATFORM_LN882H
+|| PLATFORM_XRADIO || PLATFORM_LN8825 || PLATFORM_LN882H || PLATFORM_BL_NEW
 inline __attribute__((always_inline))
 #endif
 void isidle() {
@@ -1364,6 +1371,10 @@ void Main_Init_BeforeDelay_Unsafe(bool bAutoRunScripts) {
 	CMD_InitSimulatorOnlyCommands();
 #else
 	HAL_RegisterPlatformSpecificCommands();
+#if ENABLE_BT_PROXY
+	extern void HAL_BTProxy_RegisterCommands();
+	HAL_BTProxy_RegisterCommands();
+#endif
 #endif
 
 	/* Automatic disable of PIN MONITOR after reboot */
@@ -1467,6 +1478,7 @@ void Main_ForceUnsafeInit() {
 void Main_Init_Before_Delay()
 {
 	ADDLOGF_INFO("%s", __func__);
+	bk_printf("\r%s\r\n", __func__);
 	// read or initialise the boot count flash area
 	HAL_FlashVars_IncreaseBootCount();
 
@@ -1498,7 +1510,7 @@ void Main_Init_Before_Delay()
 	}
 
 	ADDLOGF_INFO("%s done", __func__);
-	bk_printf("\r\%s done\r\n", __func__);
+	bk_printf("\r%s done\r\n", __func__);
 }
 
 // a fixed delay of 750ms to wait for calibration routines in core thread,
@@ -1510,12 +1522,12 @@ void Main_Init_Before_Delay()
 void Main_Init_Delay()
 {
 	ADDLOGF_INFO("%s", __func__);
-	bk_printf("\r\%s\r\n", __func__);
+	bk_printf("\r%s\r\n", __func__);
 
 	extended_app_waiting_for_launch2();
 
 	ADDLOGF_INFO("%s done", __func__);
-	bk_printf("\r\%s done\r\n", __func__);
+	bk_printf("\r%s done\r\n", __func__);
 
 	// use this variable wherever to determine if we have TCP/IP features.
 	// e.g. in logging to determine if we can start TCP thread
@@ -1642,7 +1654,7 @@ void Main_Init()
 }
 
 #if PLATFORM_ESPIDF || PLATFORM_ESP8266 || PLATFORM_BL602 || (PLATFORM_REALTEK && !PLATFORM_REALTEK_NEW) \
-|| PLATFORM_XRADIO || PLATFORM_W600 || PLATFORM_W800 || PLATFORM_LN8825 || PLATFORM_LN882H
+|| PLATFORM_XRADIO || PLATFORM_W600 || PLATFORM_W800 || PLATFORM_LN8825 || PLATFORM_LN882H || PLATFORM_BL_NEW
 
 void vApplicationIdleHook(void)
 {

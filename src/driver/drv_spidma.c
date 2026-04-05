@@ -608,6 +608,7 @@ void SPIDMA_Deinit(void)
 #include "../hal/ln882h/hal_pinmap_ln882h.h"
 #include "hal/hal_dma.h"
 #include "hal/hal_spi.h"
+#include "utils/power_mgmt/ln_pm.h"
 
 extern int spidma_led_pin;
 static int current_pin = 6;
@@ -616,6 +617,8 @@ void SPIDMA_Init(struct spi_message* msg)
 {
 	current_pin = spidma_led_pin >= 0 ? spidma_led_pin : 6;
 	lnPinMapping_t* pin = g_pins + current_pin;
+	soc_module_clk_gate_enable(CLK_G_SPI0);
+	soc_module_clk_gate_enable(CLK_G_DMA);
 
 	hal_gpio_pin_afio_select(pin->base, pin->pin, SPI0_MOSI);
 	hal_gpio_pin_afio_en(pin->base, pin->pin, HAL_ENABLE);
@@ -674,6 +677,8 @@ void SPIDMA_Deinit(void)
 	hal_spi_deinit(SPI0_BASE);
 	lnPinMapping_t* pin = g_pins + current_pin;
 	hal_gpio_pin_afio_en(pin->base, pin->pin, HAL_DISABLE);
+	soc_module_clk_gate_disable(CLK_G_SPI0);
+	soc_module_clk_gate_disable(CLK_G_DMA);
 }
 
 #elif PLATFORM_REALTEK
@@ -804,6 +809,110 @@ void SPIDMA_Deinit(void)
 	if(is_init) spi_free(&spi_master);
 }
 
+#elif PLATFORM_BL_NEW
+
+#include "drv_spidma.h"
+#include "bflb_spi.h"
+#include "bflb_dma.h"
+#include "bflb_gpio.h"
+
+extern int spidma_led_pin;
+static struct bflb_device_s* spi0;
+static struct bflb_device_s* dma_tx_ch;
+
+static struct bflb_dma_channel_lli_pool_s tx_llipool[1];
+static struct bflb_dma_channel_lli_transfer_s tx_transfer[1];
+static bool is_init = false;
+
+static struct bflb_dma_channel_config_s tx_config = {
+	.direction = DMA_MEMORY_TO_PERIPH,
+	.src_req = DMA_REQUEST_NONE,
+	.dst_req = DMA_REQUEST_SPI0_TX,
+	.src_addr_inc = DMA_ADDR_INCREMENT_ENABLE,
+	.dst_addr_inc = DMA_ADDR_INCREMENT_DISABLE,
+	.src_burst_count = DMA_BURST_INCR1,
+	.dst_burst_count = DMA_BURST_INCR1,
+	.src_width = DMA_DATA_WIDTH_8BIT,
+	.dst_width = DMA_DATA_WIDTH_8BIT,
+};
+
+static struct bflb_spi_config_s spi_cfg = {
+	.freq = 3222222,
+	.role = SPI_ROLE_MASTER,
+	.mode = SPI_MODE0,
+	.data_width = SPI_DATA_WIDTH_8BIT,
+	.bit_order = SPI_BIT_MSB,
+	.byte_order = SPI_BYTE_LSB,
+	.tx_fifo_threshold = 0,
+	.rx_fifo_threshold = 0,
+};
+
+void SPIDMA_Init(struct spi_message* msg)
+{
+	is_init = false;
+	struct bflb_device_s* gpio = bflb_device_get_by_name("gpio");
+#if PLATFORM_BL602
+	if(spidma_led_pin % 4 == 0)
+	{
+		GLB_Swap_SPI_0_MOSI_With_MISO(0); // 0, 4, 8, 12, 16, 20
+	}
+	else if(spidma_led_pin % 4 == 1)
+	{
+		GLB_Swap_SPI_0_MOSI_With_MISO(1); // 1, 5, 9, 13, 17, 21
+	}
+	else return;
+#else
+	if(spidma_led_pin % 4 == 3)
+	{
+		GLB_Swap_MCU_SPI_0_MOSI_With_MISO(0); // 3, 7, 11, 15, 19, 23, 27, 31, 35
+	}
+	else if(spidma_led_pin % 4 == 2)
+	{
+		GLB_Swap_MCU_SPI_0_MOSI_With_MISO(1); // 2, 6, 10, 14, 18, 22, 26, 30, 34
+	}
+	else return;
+#endif
+	bflb_gpio_init(gpio, spidma_led_pin, GPIO_FUNC_SPI0 | GPIO_ALTERNATE | GPIO_PULLUP | GPIO_SMT_EN | GPIO_DRV_1);
+
+	spi0 = bflb_device_get_by_name("spi0");
+	bflb_spi_init(spi0, &spi_cfg);
+
+	bflb_spi_link_txdma(spi0, true);
+
+	dma_tx_ch = bflb_device_get_by_name("dma0_ch0");
+	bflb_dma_channel_init(dma_tx_ch, &tx_config);
+
+	tx_transfer[0].src_addr = (uint32_t)msg->send_buf;
+	tx_transfer[0].dst_addr = (uint32_t)DMA_ADDR_SPI0_TDR;
+	tx_transfer[0].nbytes = msg->send_len;
+	bflb_dma_channel_lli_reload(dma_tx_ch, tx_llipool, 1, tx_transfer, 1);
+	is_init = true;
+}
+
+void SPIDMA_StartTX(struct spi_message* msg)
+{
+	if(is_init)
+	{
+		while(bflb_dma_channel_isbusy(dma_tx_ch));
+#if defined(BL616) || defined(BL618DG)
+		bflb_l1c_dcache_clean_all();
+#endif
+		bflb_dma_channel_lli_reload(dma_tx_ch, tx_llipool, 1, tx_transfer, 1);
+		bflb_dma_channel_start(dma_tx_ch);
+	}
+}
+
+void SPIDMA_StopTX(void)
+{
+	//if(is_init) bflb_dma_channel_stop(dma_tx_ch);
+}
+
+void SPIDMA_Deinit(void)
+{
+	if(is_init) bflb_dma_channel_deinit(dma_tx_ch);
+	is_init = false;
+}
+
 #elif PLATFORM_BL602
 
 #include "drv_spidma.h"
@@ -819,31 +928,20 @@ void SPIDMA_Deinit(void)
 extern int spidma_led_pin;
 static hosal_dma_chan_t spidma_ch;
 static DMA_LLI_Ctrl_Type spi_dma_lli[2];
-bool is_init = false;
+static bool is_init = false;
 
 void SPIDMA_Init(struct spi_message* msg)
 {
 	is_init = false;
-	switch(spidma_led_pin)
+	if(spidma_led_pin % 4 == 0)
 	{
-		case 0:
-		case 4:
-		case 8:
-		case 12:
-		case 16:
-		case 20:
-			GLB_Swap_SPI_0_MOSI_With_MISO(DISABLE);
-			break;
-		case 1:
-		case 5:
-		case 9:
-		case 13:
-		case 17:
-		case 21:
-			GLB_Swap_SPI_0_MOSI_With_MISO(ENABLE);
-			break;
-		default: return;
+		GLB_Swap_SPI_0_MOSI_With_MISO(0); // 0, 4, 8, 12, 16, 20
 	}
+	else if(spidma_led_pin % 4 == 1)
+	{
+		GLB_Swap_SPI_0_MOSI_With_MISO(1); // 1, 5, 9, 13, 17, 21
+	}
+	else return;
 	GLB_GPIO_Func_Init(GPIO_FUN_SPI, (GLB_GPIO_Type*)&spidma_led_pin, 1);
 	GLB_Set_SPI_0_ACT_MOD_Sel(GLB_SPI_PAD_ACT_AS_MASTER);
 

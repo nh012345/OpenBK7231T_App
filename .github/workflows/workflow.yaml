@@ -203,6 +203,10 @@ jobs:
           - platform: OpenLN8825
             variant: default
             gcc: apt
+          #- platform: OpenBL616
+          #  variant: default
+          #- platform: OpenBL602_ALT
+          #  variant: default
 
           # extras for BK7231T
           - platform: OpenBK7231T
@@ -264,6 +268,20 @@ jobs:
           - platform: OpenBK7238
             variant: battery
             gcc: apt
+
+          # bt proxy
+          - platform: OpenBK7238
+            variant: btproxy
+            gcc: apt
+          - platform: OpenBK7231N_ALT
+            variant: btproxy
+            gcc: apt
+          - platform: OpenRTL87X0C
+            variant: btproxy
+            gcc: apt
+          - platform: OpenLN882H
+            variant: btproxy
+            gcc: 10.3-2021.10
     steps:
       - name: Source checkout
         uses: actions/checkout@v4

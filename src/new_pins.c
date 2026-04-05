@@ -36,7 +36,7 @@
 #else
 #define DEEP_SLEEP PM_MODE_HIBERNATION
 #endif
-#elif PLATFORM_BL602
+#elif PLATFORM_BL602 && !PLATFORM_BL_NEW
 #include "bl_flash.h"
 #include "bl602_hbn.h"
 #endif
@@ -317,7 +317,7 @@ void PINS_BeginDeepSleepWithPinWakeUp(unsigned int wakeUpTime) {
 //	esp_sleep_enable_gpio_wakeup();
 //	esp_light_sleep_start();
 //#endif
-#elif PLATFORM_BL602
+#elif PLATFORM_BL602 && !PLATFORM_BL_NEW
 	uint8_t wkup = HBN_WAKEUP_GPIO_NONE;
 	HBN_GPIO_INT_Trigger_Type edge = HBN_GPIO_INT_TRIGGER_ASYNC_RISING_EDGE;
 	uint8_t g7 = (g_gpio_index_map[0] >> 7) & 1;
@@ -2300,6 +2300,7 @@ void PIN_ticks(void* param)
 				g_cfg.pins.roles[i] == IOR_DigitalInput_NoPup || g_cfg.pins.roles[i] == IOR_DigitalInput_NoPup_n
 				|| g_cfg.pins.roles[i] == IOR_DoorSensorWithDeepSleep || g_cfg.pins.roles[i] == IOR_DoorSensorWithDeepSleep_NoPup
 				|| g_cfg.pins.roles[i] == IOR_DoorSensorWithDeepSleep_pd) {
+
 				// read pin digital value (and already invert it if needed)
 				value = PIN_ReadDigitalInputValue_WithInversionIncluded(i);
 
@@ -2312,7 +2313,9 @@ void PIN_ticks(void* param)
 						if (g_lastValidState[i] != value) {
 							// became up
 							g_lastValidState[i] = value;
-							CHANNEL_Set(g_cfg.pins.channels[i], value, 0);
+							if (CFG_HasFlag(OBK_FLAG_BUTTON_DISABLE_ALL) == false) {
+								CHANNEL_Set(g_cfg.pins.channels[i], value, 0);
+							}
 						}
 					}
 					else {
@@ -2325,7 +2328,9 @@ void PIN_ticks(void* param)
 						if (g_lastValidState[i] != value) {
 							// became down
 							g_lastValidState[i] = value;
-							CHANNEL_Set(g_cfg.pins.channels[i], value, 0);
+							if (CFG_HasFlag(OBK_FLAG_BUTTON_DISABLE_ALL) == false) {
+								CHANNEL_Set(g_cfg.pins.channels[i], value, 0);
+							}
 						}
 					}
 					else {
