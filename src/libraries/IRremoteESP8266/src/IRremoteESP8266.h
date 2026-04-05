@@ -946,6 +946,13 @@
 #define SEND_CARRIER_AC84   _IR_ENABLE_DEFAULT_
 #endif  // SEND_CARRIER_AC84
 
+#ifndef SEND_OHM
+#define SEND_OHM        _IR_ENABLE_DEFAULT_
+#endif  // SEND_OHM
+#ifndef DECODE_OHM
+#define DECODE_OHM _IR_ENABLE_DEFAULT_
+#endif  // DECODE_OHM
+
 #if (DECODE_ARGO || DECODE_DAIKIN || DECODE_FUJITSU_AC || DECODE_GREE || \
      DECODE_KELVINATOR || DECODE_MITSUBISHI_AC || DECODE_TOSHIBA_AC || \
      DECODE_TROTEC || DECODE_HAIER_AC || DECODE_HITACHI_AC || \
@@ -1130,8 +1137,9 @@ enum decode_type_t {
   GORENJE,
   WOWWEE,
   CARRIER_AC84,  // 125
+  OHM,
   // Add new entries before this one, and update it to point to the last entry.
-  kLastDecodeType = CARRIER_AC84,
+  kLastDecodeType = OHM,
 };
 
 // Message lengths & required repeat values
@@ -1326,6 +1334,8 @@ const uint16_t kNECBits = 32;
 const uint16_t kNeoclimaStateLength = 12;
 const uint16_t kNeoclimaBits = kNeoclimaStateLength * 8;
 const uint16_t kNeoclimaMinRepeat = kNoRepeat;
+const uint16_t kOhmBits = 26;
+const uint16_t kOhmMinRepeat = kSingleRepeat;
 const uint16_t kPanasonicBits = 48;
 const uint32_t kPanasonicManufacturer = 0x4004;
 const uint16_t kPanasonicAcStateLength = 27;
@@ -1422,9 +1432,8 @@ const uint16_t kMilesMinRepeat = 0;
 const uint16_t kBoseBits = 16;
 const uint16_t kRhossStateLength = 12;
 const uint16_t kRhossBits = kRhossStateLength * 8;
-const uint16_t kRhossDefaultRepeat = 0;
+const uint16_t kRhossDefaultRepeat = 26;
 const uint16_t kClimaButlerBits = 52;
-
 
 // Legacy defines. (Deprecated)
 #define AIWA_RC_T501_BITS             kAiwaRcT501Bits

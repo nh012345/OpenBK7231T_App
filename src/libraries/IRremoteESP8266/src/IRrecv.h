@@ -877,6 +877,11 @@ class IRrecv {
                     const uint16_t nbits = kWowweeBits,
                     const bool strict = true);
 #endif  // DECODE_WOWWEE
+#if DECODE_OHM
+  bool decodeOHM(decode_results *results, uint16_t offset = kStartOffset,
+                  const uint16_t nbits = kOhmBits,
+                  const bool strict = true);
+#endif  // DECODE_OHM
 };
 
 #endif  // IRRECV_H_

@@ -811,6 +811,8 @@ uint16_t IRsend::defaultBits(const decode_type_t protocol) {
       return kWhirlpoolAcBits;
     case XMP:
       return kXmpBits;
+    case OHM:
+      return kOhmBits;
     // No default amount of bits.
     case FUJITSU_AC:
     case MWM:
@@ -1154,6 +1156,11 @@ bool IRsend::send(const decode_type_t type, const uint64_t data,
       sendZepeal(data, nbits, min_repeat);
       break;
 #endif  // SEND_ZEPEAL
+#if SEND_OHM
+    case OHM:
+      sendOHM(data, nbits, min_repeat);
+      break;
+#endif  // SEND_Ohm
     default:
       return false;
   }
