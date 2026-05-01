@@ -1,4 +1,9 @@
- /***************************************************
+#define IR_ENABLE_DEFAULT false
+#define DECODE_NEC true
+#define SEND_NEC true
+#define DECODE_OHM true
+#define SEND_OHM true
+/***************************************************
  * IRremote for ESP8266
  *
  * Based on the IRremote library for Arduino by Ken Shirriff
